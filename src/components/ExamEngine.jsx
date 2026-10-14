@@ -204,8 +204,9 @@ export default function ExamEngine({ onExamComplete }) {
       if (isMatch) idScore++;
     });
 
-    const totalScore = mcqScore + idScore; // out of 60
-    const percentage = Math.round((totalScore / 60) * 100);
+    const totalPossible = (activeExam?.mcq?.length || 56) + (activeExam?.identification?.length || 10);
+    const totalScore = mcqScore + idScore;
+    const percentage = Math.round((totalScore / totalPossible) * 100);
     const passed = percentage >= 75;
 
     const summary = {
@@ -334,7 +335,7 @@ export default function ExamEngine({ onExamComplete }) {
             }}>
               <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>TOTAL SCORE</div>
               <div style={{ fontSize: '2.2rem', fontWeight: 800, color: resultSummary.passed ? 'var(--accent-emerald)' : 'var(--pup-crimson)' }}>
-                {resultSummary.totalScore} / 60
+                {resultSummary.totalScore} / {resultSummary.totalQuestions || 66}
               </div>
               <div style={{ fontSize: '0.78rem', color: resultSummary.passed ? '#a7f3d0' : '#fda4af', fontWeight: 600 }}>
                 {resultSummary.percentage}% ({resultSummary.passed ? 'PASSED' : 'FAILED - 75% required'})
@@ -347,12 +348,12 @@ export default function ExamEngine({ onExamComplete }) {
               borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--border-subtle)'
             }}>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>PART 1: MCQ (50 ITEMS)</div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>PART 1: MCQ (56 ITEMS)</div>
               <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--pup-gold)' }}>
-                {resultSummary.mcqScore} / 50
+                {resultSummary.mcqScore} / {activeExam?.mcq?.length || 56}
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
-                {Math.round((resultSummary.mcqScore / 50) * 100)}% accuracy
+                {Math.round((resultSummary.mcqScore / (activeExam?.mcq?.length || 56)) * 100)}% accuracy
               </div>
             </div>
 
@@ -418,7 +419,7 @@ export default function ExamEngine({ onExamComplete }) {
                 className={`btn ${reviewFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
                 style={{ fontSize: '0.76rem', padding: '6px 12px' }}
               >
-                All (60)
+                All ({resultSummary?.totalQuestions || 66})
               </button>
               <button
                 onClick={() => setReviewFilter('wrong')}
@@ -491,7 +492,7 @@ export default function ExamEngine({ onExamComplete }) {
                 whiteSpace: 'nowrap'
               }}
             >
-              Part 1: MCQ (1-50)
+              Part 1: MCQ (1-{activeExam?.mcq?.length || 56})
             </button>
             <button
               onClick={() => setReviewPartFilter('id')}
@@ -506,7 +507,7 @@ export default function ExamEngine({ onExamComplete }) {
                 whiteSpace: 'nowrap'
               }}
             >
-              Part 2: ID (51-60)
+              Part 2: ID ({((activeExam?.mcq?.length || 56) + 1)}-{((activeExam?.mcq?.length || 56) + (activeExam?.identification?.length || 10))})
             </button>
           </div>
         </div>
@@ -644,7 +645,7 @@ export default function ExamEngine({ onExamComplete }) {
                 WebDev Midterm Exam
               </span>
               <span className="badge badge-gold">
-                60 Items (50 MCQ + 10 ID)
+                66 Items (56 MCQ + 10 ID)
               </span>
             </div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>
@@ -698,7 +699,7 @@ export default function ExamEngine({ onExamComplete }) {
               className="btn btn-primary"
               style={{ fontSize: '0.8rem', padding: '6px 12px' }}
             >
-              Finish & Review ({totalAnswered}/60)
+              Finish & Review ({totalAnswered}/{totalQuestions})
             </button>
           </div>
         </div>
@@ -714,8 +715,8 @@ export default function ExamEngine({ onExamComplete }) {
           paddingBottom: '2px'
         }}>
           {[
-            { id: 'mcq', labelDesktop: 'Part 1: MCQ (1-50)', labelMobile: 'P1: MCQ', answered: answeredMcqCount, total: 50 },
-            { id: 'id', labelDesktop: 'Part 2: Identification (51-60)', labelMobile: 'P2: ID', answered: answeredIdCount, total: 10 }
+            { id: 'mcq', labelDesktop: 'Part 1: MCQ (1-{activeExam?.mcq?.length || 56})', labelMobile: 'P1: MCQ', answered: answeredMcqCount, total: 50 },
+            { id: 'id', labelDesktop: `Part 2: Identification (${totalMcqs + 1}-${totalQuestions})`, labelMobile: 'P2: ID', answered: answeredIdCount, total: totalIds }
           ].map((part) => {
             const isActive = examPart === part.id;
             return (
@@ -780,7 +781,7 @@ export default function ExamEngine({ onExamComplete }) {
             {/* MCQ 1-50 */}
             <div style={{ marginBottom: '10px' }}>
               <div style={{ fontSize: '0.72rem', color: 'var(--pup-gold)', fontWeight: 700, marginBottom: '5px' }}>
-                Part 1: MCQ (Questions 1 - 50)
+                Part 1: MCQ (Questions 1 - {totalMcqs})
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                 {activeExam.mcq.map((q) => {
@@ -812,7 +813,7 @@ export default function ExamEngine({ onExamComplete }) {
             {/* ID 51-60 */}
             <div>
               <div style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', fontWeight: 700, marginBottom: '5px' }}>
-                Part 2: Identification (Questions 51 - 60)
+                Part 2: Identification (Questions {totalMcqs + 1} - {totalQuestions})
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                 {activeExam.identification.map((q) => {
@@ -1189,10 +1190,10 @@ export default function ExamEngine({ onExamComplete }) {
               </h3>
             </div>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
-              You have answered <strong>{totalAnswered} of 60 questions</strong>.
+              You have answered <strong>{totalAnswered} of {totalQuestions} questions</strong>.
               {totalAnswered < 60 && (
                 <span style={{ display: 'block', marginTop: '6px', color: '#fda4af' }}>
-                  Warning: You have {60 - totalAnswered} unanswered questions remaining.
+                  Warning: You have {totalQuestions - totalAnswered} unanswered questions remaining.
                 </span>
               )}
             </p>

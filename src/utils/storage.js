@@ -110,7 +110,7 @@ export function getOverallProgress(progress) {
     totalLessons,
     lessonPercentage: lessonPct,
     examScore: progress.examResults ? progress.examResults.score : null,
-    examTotal: progress.examResults ? progress.examResults.total : 60,
+    examTotal: progress.examResults ? progress.examResults.total : 66,
     examPercentage: examPct,
     isExamPassed: examPct >= 70
   };

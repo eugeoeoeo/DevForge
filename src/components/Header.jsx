@@ -62,7 +62,7 @@ export default function Header({ activeTab, setActiveTab, progress }) {
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            60-Item Exam
+            Midterm Exam (66 Items)
           </button>
 
           <button
@@ -83,7 +83,7 @@ export default function Header({ activeTab, setActiveTab, progress }) {
           {examScore !== undefined && (
             <div className="hidden sm:flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg text-xs text-amber-300 font-mono">
               <Award className="w-3.5 h-3.5" />
-              <span>Exam: {examScore}/60</span>
+              <span>Exam: {examScore}/66</span>
             </div>
           )}
           <div className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-lg text-xs text-blue-300 font-mono">

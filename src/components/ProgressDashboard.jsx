@@ -64,7 +64,7 @@ export default function ProgressDashboard({ progress, onUpdateProgress, setActiv
           <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-4">
             <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
               <span className="font-semibold text-slate-300 flex items-center gap-1.5">
-                <FileCheck2 className="w-4 h-4 text-amber-400" /> 60-Item Exam Score
+                <FileCheck2 className="w-4 h-4 text-amber-400" /> 66-Item Exam Score
               </span>
               <span className="font-mono text-amber-400 font-bold">
                 {exam ? `${exam.percentage}%` : '0%'}

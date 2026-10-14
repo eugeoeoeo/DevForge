@@ -5,7 +5,7 @@ import { MODULES_DATA } from '../data/modulesData.js';
 export default function HomeView({ setActiveTab, progress }) {
   const completedLessons = Object.keys(progress?.completedLessons || {}).filter(k => progress?.completedLessons[k]).length;
   const examScore = progress?.examResults?.score;
-  const examTotal = progress?.examResults?.total || 60;
+  const examTotal = progress?.examResults?.total || 66;
   const examPercentage = progress?.examResults?.percentage;
 
   return (
@@ -20,7 +20,7 @@ export default function HomeView({ setActiveTab, progress }) {
           </div>
 
           <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight leading-tight">
-            Web Development Midterm Reviewer & 60-Item Exam
+            Web Development Midterm Reviewer & 66-Item Exam
           </h1>
 
           <p className="text-sm md:text-base text-slate-300 max-w-2xl leading-relaxed">
@@ -34,7 +34,7 @@ export default function HomeView({ setActiveTab, progress }) {
               className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm flex items-center gap-2 shadow-lg shadow-amber-500/25 transition-all transform active:scale-95"
             >
               <FileCheck2 className="w-4 h-4" />
-              Take 60-Item Theoretical Exam
+              Take 66-Item Theoretical Exam
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -71,7 +71,7 @@ export default function HomeView({ setActiveTab, progress }) {
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-sm">
           <div className="text-xs text-slate-400 font-medium">Exam Format</div>
           <div className="text-2xl font-black text-amber-400 mt-1">60 <span className="text-xs text-slate-500">Items</span></div>
-          <div className="text-xs text-slate-400 mt-1">50 MCQ + 10 Iden</div>
+          <div className="text-xs text-slate-400 mt-1">56 MCQ + 10 Iden</div>
         </div>
 
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-sm">
@@ -144,7 +144,7 @@ export default function HomeView({ setActiveTab, progress }) {
               <span className="text-xs uppercase font-extrabold tracking-wider text-amber-400">Theoretical Examination</span>
             </div>
             <h3 className="text-lg md:text-xl font-bold text-white">
-              60-Item Master Reviewer (50 MCQ + 10 Identification)
+              66-Item Master Reviewer (56 MCQ + 10 Identification)
             </h3>
             <p className="text-xs md:text-sm text-slate-300">
               Instant feedback on every click, randomized question pool from 108+ items, shuffled answer choices (A, B, C, D), and separated wrong-answer analysis at completion.

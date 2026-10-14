@@ -5,7 +5,7 @@ export default function BottomNav({ activeTab, setActiveTab }) {
   const tabs = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'lessons', label: 'Lessons', icon: BookOpen },
-    { id: 'exam', label: '60-Exam', icon: FileCheck2 },
+    { id: 'exam', label: 'Exam', icon: FileCheck2 },
     { id: 'progress', label: 'Progress', icon: BarChart3 }
   ];
 
