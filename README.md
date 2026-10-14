@@ -1,4 +1,4 @@
-# 🌐 DevForge: Web Development Midterm Reviewer & Exam
+# 🌐 DevForge: Multi-Subject Midterm Reviewer & Exam Suite (WebDev + Machine Learning)
 
 > **Modern, mobile-first Web Development (HTML5, CSS3 & PHP) Midterm Reviewer and 60-Item Theoretical Examination WebApp.**  
 > Built for students at the **Polytechnic University of the Philippines (PUP) - College of Computer and Information Sciences (CCIS)**.

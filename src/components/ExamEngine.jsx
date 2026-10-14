@@ -24,7 +24,7 @@ import {
 export default function ExamEngine({ onExamComplete }) {
   // Initialize Active 60-Item Exam from LocalStorage or generate fresh from 108-item pool
   const [activeExam, setActiveExam] = useState(() => {
-    const saved = loadActiveExamSession();
+    const saved = loadActiveExamSession(activeCourse);
     if (saved && saved.activeExam && saved.activeExam.mcq) {
       return saved.activeExam;
     }
@@ -32,7 +32,7 @@ export default function ExamEngine({ onExamComplete }) {
   });
 
   const [examPart, setExamPart] = useState(() => {
-    const saved = loadActiveExamSession();
+    const saved = loadActiveExamSession(activeCourse);
     return saved?.examPart || 'mcq'; // 'mcq' | 'id'
   });
 
@@ -40,44 +40,44 @@ export default function ExamEngine({ onExamComplete }) {
 
   // User responses & evaluation state
   const [mcqAnswers, setMcqAnswers] = useState(() => {
-    const saved = loadActiveExamSession();
+    const saved = loadActiveExamSession(activeCourse);
     return saved?.mcqAnswers || {};
   });
 
   const [idAnswers, setIdAnswers] = useState(() => {
-    const saved = loadActiveExamSession();
+    const saved = loadActiveExamSession(activeCourse);
     return saved?.idAnswers || {};
   });
 
   const [idEvaluated, setIdEvaluated] = useState(() => {
-    const saved = loadActiveExamSession();
+    const saved = loadActiveExamSession(activeCourse);
     return saved?.idEvaluated || {};
   });
 
   const [flagged, setFlagged] = useState(() => {
-    const saved = loadActiveExamSession();
+    const saved = loadActiveExamSession(activeCourse);
     return saved?.flagged || {};
   });
 
   // Timer: 60 minutes
   const [secondsLeft, setSecondsLeft] = useState(() => {
-    const saved = loadActiveExamSession();
+    const saved = loadActiveExamSession(activeCourse);
     return typeof saved?.secondsLeft === 'number' ? saved.secondsLeft : 60 * 60;
   });
 
   const [isTimerRunning, setIsTimerRunning] = useState(() => {
-    const saved = loadActiveExamSession();
+    const saved = loadActiveExamSession(activeCourse);
     return saved?.isSubmitted ? false : true;
   });
 
   // Submission & Results State
   const [isSubmitted, setIsSubmitted] = useState(() => {
-    const saved = loadActiveExamSession();
+    const saved = loadActiveExamSession(activeCourse);
     return saved?.isSubmitted || false;
   });
 
   const [resultSummary, setResultSummary] = useState(() => {
-    const saved = loadActiveExamSession();
+    const saved = loadActiveExamSession(activeCourse);
     return saved?.resultSummary || null;
   });
 
@@ -219,7 +219,7 @@ export default function ExamEngine({ onExamComplete }) {
     };
 
     setResultSummary(summary);
-    saveExamAttempt(summary);
+    saveExamAttempt(summary, activeCourse);
 
     if (passed) {
       try {
@@ -237,7 +237,7 @@ export default function ExamEngine({ onExamComplete }) {
 
   // Retake Examination: Generates fresh 50 MCQ + 10 ID from pool with fresh shuffles
   const handleRetake = () => {
-    clearActiveExamSession();
+    clearActiveExamSession(activeCourse);
     const freshSession = generateExamSession(false);
     setActiveExam(freshSession);
     setMcqAnswers({});

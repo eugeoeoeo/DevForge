@@ -1,8 +1,6 @@
-// Dynamic Exam Sampler
-// Contains strictly the 56 MCQs + 10 Identification items
-// Shuffles question order and shuffles options A, B, C, D using Fisher-Yates
-
-import { EXAM_POOL } from '../data/examPool.js';
+// Dynamic Exam Sampler supporting Web Development & Elective (Applied Machine Learning)
+import { EXAM_POOL as WEBDEV_POOL } from '../data/examPool.js';
+import { ELECTIVES_EXAM_POOL } from '../data/electivesExamPool.js';
 
 export function shuffleArray(array) {
   const arr = [...array];
@@ -13,15 +11,10 @@ export function shuffleArray(array) {
   return arr;
 }
 
-/**
- * Generates an active 66-item WebDev practice examination:
- * - Exactly the 56 MCQs with shuffled questions and shuffled options A,B,C,D
- * - Exactly the 10 Identification items with shuffled order
- * Total: 66 items (56 MCQ + 10 ID)
- */
-export function generateExamSession() {
-  // 1. Shuffle and map 56 MCQs
-  const shuffledMcqs = shuffleArray(EXAM_POOL.mcq).map((q, idx) => {
+export function generateExamSession(courseId = 'webdev') {
+  const pool = courseId === 'electives' ? ELECTIVES_EXAM_POOL : WEBDEV_POOL;
+
+  const shuffledMcqs = shuffleArray(pool.mcq).map((q, idx) => {
     const correctText = q.options[q.correctAnswer];
     const shuffledOptions = shuffleArray(q.options);
     const newCorrectAnswer = shuffledOptions.indexOf(correctText);
@@ -34,14 +27,14 @@ export function generateExamSession() {
     };
   });
 
-  // 2. Shuffle and map 10 Identification items
-  const shuffledIds = shuffleArray(EXAM_POOL.identification).map((q, idx) => ({
+  const shuffledIds = shuffleArray(pool.identification).map((q, idx) => ({
     ...q,
-    number: 57 + idx
+    number: shuffledMcqs.length + 1 + idx
   }));
 
   return {
-    sessionId: 'session-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+    sessionId: 'session-' + courseId + '-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+    courseId,
     createdAt: new Date().toISOString(),
     totalQuestions: shuffledMcqs.length + shuffledIds.length,
     mcq: shuffledMcqs,
