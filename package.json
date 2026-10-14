@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "alasql": "^4.5.1",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^1.16.0",
@@ -17,6 +18,9 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.6.1",
+    "postcss": "^8.5.30",
+    "tailwindcss": "^4.3.3",
     "vite": "^6.2.0"
   },
   "description": "Interactive, mobile-optimized Web Development Midterm Reviewer & 60-Item Theoretical Examination WebApp (HTML5, CSS3, PHP)."
