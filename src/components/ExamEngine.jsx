@@ -10,107 +10,206 @@ import {
   Filter,
   Check,
   X,
-  Send
+  Send,
+  ChevronLeft,
+  ChevronRight,
+  Grid,
+  Layers,
+  Sparkles,
+  HelpCircle,
+  Brain,
+  Globe2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { generateExamSession } from '../data/examData.js';
+import { generateExamSession } from '../utils/examSampler.js';
 import {
   saveExamAttempt,
   loadActiveExamSession,
   saveActiveExamSession,
   clearActiveExamSession
 } from '../utils/storage.js';
+import { COURSES } from '../data/courses.js';
 
-export default function ExamEngine({ onExamComplete }) {
-  // Initialize Active 60-Item Exam from LocalStorage or generate fresh from 108-item pool
+export default function ExamEngine({ activeCourse = 'webdev', onExamComplete, onUpdateProgress, progress }) {
+  const currentCourse = COURSES[activeCourse] || COURSES.webdev;
+
+  // Initialize Active Exam from LocalStorage or generate fresh
   const [activeExam, setActiveExam] = useState(() => {
-    const saved = loadActiveExamSession(activeCourse);
-    if (saved && saved.activeExam && saved.activeExam.mcq) {
-      return saved.activeExam;
+    try {
+      const saved = loadActiveExamSession(activeCourse);
+      if (
+        saved &&
+        saved.activeExam &&
+        Array.isArray(saved.activeExam.mcq) &&
+        saved.activeExam.mcq.length > 0 &&
+        saved.activeExam.courseId === activeCourse
+      ) {
+        return saved.activeExam;
+      }
+    } catch (e) {
+      console.error('Failed loading saved session', e);
     }
-    return generateExamSession(false);
+    return generateExamSession(activeCourse);
   });
 
   const [examPart, setExamPart] = useState(() => {
-    const saved = loadActiveExamSession(activeCourse);
-    return saved?.examPart || 'mcq'; // 'mcq' | 'id'
+    try {
+      const saved = loadActiveExamSession(activeCourse);
+      if (saved?.activeExam?.courseId === activeCourse && saved?.examPart) {
+        return saved.examPart;
+      }
+    } catch (e) {}
+    return 'mcq'; // 'mcq' | 'id'
+  });
+
+  const [currentMcqIndex, setCurrentMcqIndex] = useState(() => {
+    try {
+      const saved = loadActiveExamSession(activeCourse);
+      if (saved?.activeExam?.courseId === activeCourse && typeof saved?.currentMcqIndex === 'number') {
+        return saved.currentMcqIndex;
+      }
+    } catch (e) {}
+    return 0;
+  });
+
+  const [currentIdIndex, setCurrentIdIndex] = useState(() => {
+    try {
+      const saved = loadActiveExamSession(activeCourse);
+      if (saved?.activeExam?.courseId === activeCourse && typeof saved?.currentIdIndex === 'number') {
+        return saved.currentIdIndex;
+      }
+    } catch (e) {}
+    return 0;
   });
 
   const [showJumpDrawer, setShowJumpDrawer] = useState(false);
 
   // User responses & evaluation state
   const [mcqAnswers, setMcqAnswers] = useState(() => {
-    const saved = loadActiveExamSession(activeCourse);
-    return saved?.mcqAnswers || {};
+    try {
+      const saved = loadActiveExamSession(activeCourse);
+      if (saved?.activeExam?.courseId === activeCourse && saved?.mcqAnswers) {
+        return saved.mcqAnswers;
+      }
+    } catch (e) {}
+    return {};
   });
 
   const [idAnswers, setIdAnswers] = useState(() => {
-    const saved = loadActiveExamSession(activeCourse);
-    return saved?.idAnswers || {};
+    try {
+      const saved = loadActiveExamSession(activeCourse);
+      if (saved?.activeExam?.courseId === activeCourse && saved?.idAnswers) {
+        return saved.idAnswers;
+      }
+    } catch (e) {}
+    return {};
   });
 
   const [idEvaluated, setIdEvaluated] = useState(() => {
-    const saved = loadActiveExamSession(activeCourse);
-    return saved?.idEvaluated || {};
+    try {
+      const saved = loadActiveExamSession(activeCourse);
+      if (saved?.activeExam?.courseId === activeCourse && saved?.idEvaluated) {
+        return saved.idEvaluated;
+      }
+    } catch (e) {}
+    return {};
   });
 
   const [flagged, setFlagged] = useState(() => {
-    const saved = loadActiveExamSession(activeCourse);
-    return saved?.flagged || {};
+    try {
+      const saved = loadActiveExamSession(activeCourse);
+      if (saved?.activeExam?.courseId === activeCourse && saved?.flagged) {
+        return saved.flagged;
+      }
+    } catch (e) {}
+    return {};
   });
 
   // Timer: 60 minutes
   const [secondsLeft, setSecondsLeft] = useState(() => {
-    const saved = loadActiveExamSession(activeCourse);
-    return typeof saved?.secondsLeft === 'number' ? saved.secondsLeft : 60 * 60;
+    try {
+      const saved = loadActiveExamSession(activeCourse);
+      if (saved?.activeExam?.courseId === activeCourse && typeof saved?.secondsLeft === 'number') {
+        return saved.secondsLeft;
+      }
+    } catch (e) {}
+    return 60 * 60;
   });
 
   const [isTimerRunning, setIsTimerRunning] = useState(() => {
-    const saved = loadActiveExamSession(activeCourse);
-    return saved?.isSubmitted ? false : true;
+    try {
+      const saved = loadActiveExamSession(activeCourse);
+      if (saved?.activeExam?.courseId === activeCourse && saved?.isSubmitted) {
+        return false;
+      }
+    } catch (e) {}
+    return true;
   });
 
   // Submission & Results State
   const [isSubmitted, setIsSubmitted] = useState(() => {
-    const saved = loadActiveExamSession(activeCourse);
-    return saved?.isSubmitted || false;
+    try {
+      const saved = loadActiveExamSession(activeCourse);
+      if (saved?.activeExam?.courseId === activeCourse && saved?.isSubmitted) {
+        return true;
+      }
+    } catch (e) {}
+    return false;
   });
 
   const [resultSummary, setResultSummary] = useState(() => {
-    const saved = loadActiveExamSession(activeCourse);
-    return saved?.resultSummary || null;
+    try {
+      const saved = loadActiveExamSession(activeCourse);
+      if (saved?.activeExam?.courseId === activeCourse && saved?.resultSummary) {
+        return saved.resultSummary;
+      }
+    } catch (e) {}
+    return null;
   });
 
-  const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
+  const [confirmSubmitModal, setConfirmSubmitModal] = useState(false);
+  const [reviewFilter, setReviewFilter] = useState('all'); // 'all' | 'wrong' | 'correct' | 'flagged'
 
-  // Review Navigation Filter: 'all' | 'wrong' | 'correct' | 'flagged'
-  const [reviewFilter, setReviewFilter] = useState('all');
-  const [reviewPartFilter, setReviewPartFilter] = useState('all'); // 'all' | 'mcq' | 'id'
+  const totalMcqs = activeExam?.mcq?.length || currentCourse.mcqCount || 56;
+  const totalIds = activeExam?.identification?.length || currentCourse.idCount || 10;
+  const totalQuestions = totalMcqs + totalIds;
+
+  const currentMcq = activeExam?.mcq?.[currentMcqIndex] || activeExam?.mcq?.[0] || { id: 'm0', question: '', options: [], number: 1, correctAnswer: 0 };
+  const currentId = activeExam?.identification?.[currentIdIndex] || activeExam?.identification?.[0] || { id: 'i0', question: '', acceptableAnswers: [], number: totalMcqs + 1 };
 
   // Persist exam session to LocalStorage on state updates
   useEffect(() => {
-    const sessionState = {
-      activeExam,
-      examPart,
-      mcqAnswers,
-      idAnswers,
-      idEvaluated,
-      flagged,
-      secondsLeft,
-      isSubmitted,
-      resultSummary
-    };
-    saveActiveExamSession(sessionState);
+    try {
+      const sessionState = {
+        activeExam,
+        examPart,
+        currentMcqIndex,
+        currentIdIndex,
+        mcqAnswers,
+        idAnswers,
+        idEvaluated,
+        flagged,
+        secondsLeft,
+        isSubmitted,
+        resultSummary
+      };
+      saveActiveExamSession(sessionState, activeCourse);
+    } catch (e) {
+      console.error('Failed to auto-save session:', e);
+    }
   }, [
     activeExam,
     examPart,
+    currentMcqIndex,
+    currentIdIndex,
     mcqAnswers,
     idAnswers,
     idEvaluated,
     flagged,
     secondsLeft,
     isSubmitted,
-    resultSummary
+    resultSummary,
+    activeCourse
   ]);
 
   // Countdown timer
@@ -129,117 +228,140 @@ export default function ExamEngine({ onExamComplete }) {
     return () => clearInterval(interval);
   }, [isTimerRunning, isSubmitted]);
 
-  const formatTime = (secs) => {
+  // Trigger celebration on high score
+  useEffect(() => {
+    if (isSubmitted && resultSummary && resultSummary.percentage >= 75) {
+      try {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      } catch (e) {}
+    }
+  }, [isSubmitted, resultSummary]);
+
+  const formatTimer = (secs) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const scrollToQuestion = (qNum, part) => {
-    if (part && part !== examPart) {
-      setExamPart(part);
-    }
-    setShowJumpDrawer(false);
-    setTimeout(() => {
-      const el = document.getElementById(`exam-q-${qNum}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // MCQ Selection handler (Instant Feedback)
+  const handleSelectMcqOption = (optIdx) => {
+    if (isSubmitted) return;
+    if (mcqAnswers[currentMcqIndex] !== undefined) return; // Prevent changing once answered
+
+    setMcqAnswers((prev) => ({
+      ...prev,
+      [currentMcqIndex]: optIdx
+    }));
+  };
+
+  // Identification Submit handler (Instant Feedback)
+  const handleSubmitIdAnswer = (qIdx) => {
+    if (isSubmitted) return;
+    if (idEvaluated[qIdx]) return; // Already evaluated
+
+    const userRaw = (idAnswers[qIdx] || '').trim().toLowerCase();
+    const targetQ = activeExam.identification[qIdx];
+    const acceptable = targetQ.acceptableAnswers.map((a) => a.trim().toLowerCase());
+
+    const isMatch = acceptable.some((ans) => {
+      if (userRaw === ans) return true;
+      if (userRaw.length > 2 && ans.length > 2) {
+        if (userRaw.includes(ans) || ans.includes(userRaw)) return true;
       }
-    }, 100);
-  };
+      return false;
+    });
 
-  // Immediate Per-Click MCQ Selection
-  const handleSelectMcq = (qId, optionIdx) => {
-    if (isSubmitted) return;
-    setMcqAnswers((prev) => ({ ...prev, [qId]: optionIdx }));
-  };
-
-  // Identification typing & check handler
-  const handleInputId = (qId, text) => {
-    if (isSubmitted) return;
-    setIdAnswers((prev) => ({ ...prev, [qId]: text }));
-  };
-
-  const handleCheckIdAnswer = (q) => {
-    if (isSubmitted) return;
-    const userText = (idAnswers[q.id] || '').trim().toLowerCase();
-    if (!userText) return;
-    const isMatch = q.acceptedAnswers.some(
-      (ans) => ans.toLowerCase().trim() === userText
-    );
     setIdEvaluated((prev) => ({
       ...prev,
-      [q.id]: {
-        checked: true,
-        isMatch,
-        submittedText: (idAnswers[q.id] || '').trim()
+      [qIdx]: {
+        isCorrect: isMatch,
+        revealed: true
       }
     }));
   };
 
-  const toggleFlag = (id) => {
-    setFlagged((prev) => ({ ...prev, [id]: !prev[id] }));
+  const handleToggleFlag = (type, idx) => {
+    const key = `${type}_${idx}`;
+    setFlagged((prev) => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
   };
 
-  // Submit Examination
+  // Submit Final Exam
   const handleSubmitExam = () => {
-    setShowConfirmSubmit(false);
-    setIsTimerRunning(false);
-    setIsSubmitted(true);
-
-    // Calculate MCQ score (out of 50)
     let mcqScore = 0;
-    activeExam.mcq.forEach((q) => {
-      if (mcqAnswers[q.id] === q.correctAnswer) mcqScore++;
+    activeExam.mcq.forEach((q, idx) => {
+      if (mcqAnswers[idx] === q.correctAnswer) {
+        mcqScore++;
+      }
     });
 
-    // Calculate Identification score (out of 10)
     let idScore = 0;
-    activeExam.identification.forEach((q) => {
-      const userText = (idAnswers[q.id] || '').trim().toLowerCase();
-      if (!userText) return;
-      const isMatch = q.acceptedAnswers.some(
-        (ans) => ans.toLowerCase().trim() === userText
-      );
-      if (isMatch) idScore++;
+    activeExam.identification.forEach((q, idx) => {
+      if (idEvaluated[idx]?.isCorrect) {
+        idScore++;
+      } else {
+        const userRaw = (idAnswers[idx] || '').trim().toLowerCase();
+        const acceptable = q.acceptableAnswers.map((a) => a.trim().toLowerCase());
+        const isMatch = acceptable.some((ans) => {
+          if (userRaw === ans) return true;
+          if (userRaw.length > 2 && ans.length > 2) {
+            if (userRaw.includes(ans) || ans.includes(userRaw)) return true;
+          }
+          return false;
+        });
+        if (isMatch) idScore++;
+      }
     });
 
-    const totalPossible = (activeExam?.mcq?.length || 56) + (activeExam?.identification?.length || 10);
+    const totalPossible = totalQuestions;
     const totalScore = mcqScore + idScore;
     const percentage = Math.round((totalScore / totalPossible) * 100);
-    const passed = percentage >= 75;
 
     const summary = {
-      mcqScore,
-      idScore,
+      courseId: activeCourse,
       totalScore,
+      totalQuestions: totalPossible,
       percentage,
-      passed,
+      mcqScore,
+      totalMcqs,
+      idScore,
+      totalIds,
+      passed: percentage >= 70,
+      submittedDate: new Date().toISOString(),
       timeSpentSec: 60 * 60 - secondsLeft
     };
 
     setResultSummary(summary);
-    saveExamAttempt(summary, activeCourse);
+    setIsSubmitted(true);
+    setIsTimerRunning(false);
+    setConfirmSubmitModal(false);
 
-    if (passed) {
-      try {
-        confetti({
-          particleCount: 120,
-          spread: 80,
-          origin: { y: 0.5 }
-        });
-      } catch (e) {}
+    try {
+      saveExamAttempt(summary, activeCourse);
+      if (onExamComplete) onExamComplete(summary);
+    } catch (e) {
+      console.error('Error saving exam attempt:', e);
     }
 
-    if (onExamComplete) onExamComplete(summary);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Retake Examination: Generates fresh 50 MCQ + 10 ID from pool with fresh shuffles
-  const handleRetake = () => {
+  // Retake Examination: Generates fresh random session from pool
+  const handleRetakeExam = () => {
+    if (!window.confirm(`Start a fresh ${currentCourse.title} examination? Your previous score is saved in analytics.`)) return;
+
     clearActiveExamSession(activeCourse);
-    const freshSession = generateExamSession(false);
+    const freshSession = generateExamSession(activeCourse);
     setActiveExam(freshSession);
+    setExamPart('mcq');
+    setCurrentMcqIndex(0);
+    setCurrentIdIndex(0);
     setMcqAnswers({});
     setIdAnswers({});
     setIdEvaluated({});
@@ -248,967 +370,621 @@ export default function ExamEngine({ onExamComplete }) {
     setIsTimerRunning(true);
     setIsSubmitted(false);
     setResultSummary(null);
-    setExamPart('mcq');
     setReviewFilter('all');
-    setReviewPartFilter('all');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Answered counts
   const answeredMcqCount = Object.keys(mcqAnswers).length;
-  const answeredIdCount = Object.values(idAnswers).filter((t) => (t || '').trim().length > 0).length;
+  const answeredIdCount = Object.keys(idEvaluated).length;
   const totalAnswered = answeredMcqCount + answeredIdCount;
 
-  // Evaluation of questions for review
-  const computeItemStatus = (q, type) => {
-    if (type === 'mcq') {
-      const userAns = mcqAnswers[q.id];
-      if (userAns === undefined) return { isAnswered: false, isCorrect: false };
-      return { isAnswered: true, isCorrect: userAns === q.correctAnswer };
-    }
-    if (type === 'id') {
-      const userText = (idAnswers[q.id] || '').trim().toLowerCase();
-      if (!userText) return { isAnswered: false, isCorrect: false };
-      const isMatch = q.acceptedAnswers.some(
-        (ans) => ans.toLowerCase().trim() === userText
-      );
-      return { isAnswered: true, isCorrect: isMatch };
-    }
-    return { isAnswered: false, isCorrect: false };
-  };
-
-  const allQuestionsWithStatus = [
-    ...activeExam.mcq.map((q) => ({ ...q, type: 'mcq', ...computeItemStatus(q, 'mcq') })),
-    ...activeExam.identification.map((q) => ({ ...q, type: 'id', ...computeItemStatus(q, 'id') }))
-  ];
-
-  const totalWrongCount = allQuestionsWithStatus.filter((q) => !q.isCorrect).length;
-  const totalCorrectCount = allQuestionsWithStatus.filter((q) => q.isCorrect).length;
-  const totalFlaggedCount = Object.values(flagged).filter(Boolean).length;
-
-  // Filtered review questions
-  const filteredReviewQuestions = allQuestionsWithStatus.filter((q) => {
-    if (reviewFilter === 'wrong' && q.isCorrect) return false;
-    if (reviewFilter === 'correct' && !q.isCorrect) return false;
-    if (reviewFilter === 'flagged' && !flagged[q.id]) return false;
-    if (reviewPartFilter !== 'all' && q.type !== reviewPartFilter) return false;
-    return true;
-  });
-
-  // ==========================================
-  // RENDER: RESULTS SCREEN & SEPARATED REVIEW
-  // ==========================================
+  // -------------------------------------------------------------
+  // RESULTS SCREEN
+  // -------------------------------------------------------------
   if (isSubmitted && resultSummary) {
+    const filteredMcqList = activeExam.mcq.map((q, idx) => {
+      const studentAns = mcqAnswers[idx];
+      const isCorrect = studentAns === q.correctAnswer;
+      const isAnswered = studentAns !== undefined;
+      const isFlag = !!flagged[`mcq_${idx}`];
+      return { ...q, index: idx, type: 'mcq', studentAns, isCorrect, isAnswered, isFlag };
+    }).filter((item) => {
+      if (reviewFilter === 'wrong') return !item.isCorrect;
+      if (reviewFilter === 'correct') return item.isCorrect;
+      if (reviewFilter === 'flagged') return item.isFlag;
+      return true;
+    });
+
+    const filteredIdList = activeExam.identification.map((q, idx) => {
+      const evalObj = idEvaluated[idx];
+      const isCorrect = !!evalObj?.isCorrect;
+      const isFlag = !!flagged[`id_${idx}`];
+      const studentAns = idAnswers[idx] || '';
+      return { ...q, index: idx, type: 'id', studentAns, isCorrect, isFlag };
+    }).filter((item) => {
+      if (reviewFilter === 'wrong') return !item.isCorrect;
+      if (reviewFilter === 'correct') return item.isCorrect;
+      if (reviewFilter === 'flagged') return item.isFlag;
+      return true;
+    });
+
+    const wrongTotal = totalQuestions - resultSummary.totalScore;
+
     return (
-      <div className="glass-card animate-fade-in" style={{ padding: '24px 20px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{
-            display: 'inline-flex',
-            padding: '18px',
-            borderRadius: '50%',
-            background: resultSummary.passed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(225, 29, 72, 0.15)',
-            color: resultSummary.passed ? 'var(--accent-emerald)' : 'var(--pup-crimson)',
-            marginBottom: '14px'
-          }}>
-            <Award size={52} />
+      <div className="space-y-6 pb-12">
+        {/* Hero Score Banner */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-3 bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <Award className="w-4 h-4" />
+            {currentCourse.title} Examination Result
           </div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', marginBottom: '6px' }}>
-            {resultSummary.passed ? 'Web Development Examination Passed!' : 'Examination Needs Further Review'}
-          </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-            PUP CCIS • Web Development Midterm Reviewer (HTML5, CSS3 & PHP)
-          </p>
 
-          {/* Score Cards */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '14px',
-            marginTop: '20px',
-            marginBottom: '20px'
-          }}>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.04)',
-              padding: '16px',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border-subtle)'
-            }}>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>TOTAL SCORE</div>
-              <div style={{ fontSize: '2.2rem', fontWeight: 800, color: resultSummary.passed ? 'var(--accent-emerald)' : 'var(--pup-crimson)' }}>
-                {resultSummary.totalScore} / {resultSummary.totalQuestions || 66}
-              </div>
-              <div style={{ fontSize: '0.78rem', color: resultSummary.passed ? '#a7f3d0' : '#fda4af', fontWeight: 600 }}>
-                {resultSummary.percentage}% ({resultSummary.passed ? 'PASSED' : 'FAILED - 75% required'})
+          <div className="text-4xl md:text-6xl font-black text-white mt-1">
+            {resultSummary.totalScore} <span className="text-xl md:text-3xl text-slate-500 font-bold">/ {resultSummary.totalQuestions}</span>
+          </div>
+
+          <div className="text-lg md:text-xl font-bold mt-2" style={{ color: resultSummary.passed ? '#34d399' : '#f87171' }}>
+            {resultSummary.percentage}% • {resultSummary.passed ? 'PASSED (Midterm Ready!)' : 'NEEDS PRACTICE'}
+          </div>
+
+          {/* Sub Score Breakdown */}
+          <div className="grid grid-cols-2 max-w-md mx-auto gap-3 mt-6 pt-6 border-t border-slate-800">
+            <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-3">
+              <div className="text-[11px] text-slate-400 font-semibold uppercase">PART 1: MCQ ({totalMcqs})</div>
+              <div className="text-xl font-black text-blue-400 mt-1">{resultSummary.mcqScore} / {totalMcqs}</div>
+              <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                {Math.round((resultSummary.mcqScore / totalMcqs) * 100)}% accuracy
               </div>
             </div>
 
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.04)',
-              padding: '16px',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border-subtle)'
-            }}>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>PART 1: MCQ (56 ITEMS)</div>
-              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--pup-gold)' }}>
-                {resultSummary.mcqScore} / {activeExam?.mcq?.length || 56}
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
-                {Math.round((resultSummary.mcqScore / (activeExam?.mcq?.length || 56)) * 100)}% accuracy
-              </div>
-            </div>
-
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.04)',
-              padding: '16px',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border-subtle)'
-            }}>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>PART 2: ID (10 ITEMS)</div>
-              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
-                {resultSummary.idScore} / 10
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>
-                {Math.round((resultSummary.idScore / 10) * 100)}% accuracy
+            <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-3">
+              <div className="text-[11px] text-slate-400 font-semibold uppercase">PART 2: ID ({totalIds})</div>
+              <div className="text-xl font-black text-emerald-400 mt-1">{resultSummary.idScore} / {totalIds}</div>
+              <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                {Math.round((resultSummary.idScore / totalIds) * 100)}% accuracy
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '24px' }}>
-            <button onClick={handleRetake} className="btn btn-primary" style={{ padding: '10px 20px', fontWeight: 700 }}>
-              <RotateCcw size={16} /> Retake Examination (New 60 Sample)
-            </button>
+          {/* Retake Button */}
+          <div className="mt-6 flex justify-center">
             <button
-              onClick={() => {
-                setReviewFilter('wrong');
-                setReviewPartFilter('all');
-              }}
-              className="btn btn-secondary"
-              style={{
-                borderColor: totalWrongCount > 0 ? 'rgba(225, 29, 72, 0.5)' : undefined,
-                color: totalWrongCount > 0 ? '#fda4af' : undefined
-              }}
+              onClick={handleRetakeExam}
+              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all transform active:scale-95"
             >
-              <XCircle size={16} color="var(--pup-crimson)" /> Review Wrong Answers ({totalWrongCount})
+              <RotateCcw className="w-4 h-4" /> Retake Examination (New Randomized Session)
             </button>
           </div>
         </div>
 
-        {/* Separated Review Navigation Header */}
-        <div style={{
-          background: 'rgba(15, 23, 42, 0.65)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '16px',
-          border: '1px solid var(--border-subtle)',
-          marginBottom: '20px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
-            <div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Filter size={18} color="var(--pup-gold)" /> Examination Answers Review
+        {/* Filter Tabs for Targeted Mistake Review */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-md">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-amber-400" />
+            <span className="text-xs font-bold text-white uppercase tracking-wider">Review Filter:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setReviewFilter('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                reviewFilter === 'all' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              }`}
+            >
+              All ({totalQuestions})
+            </button>
+            <button
+              onClick={() => setReviewFilter('wrong')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                reviewFilter === 'wrong' ? 'bg-red-600 text-white shadow-md' : 'bg-red-950/40 border border-red-900/50 hover:bg-red-900/40 text-red-300'
+              }`}
+            >
+              <X className="w-3.5 h-3.5" /> ✕ Wrong Answers ({wrongTotal})
+            </button>
+            <button
+              onClick={() => setReviewFilter('correct')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                reviewFilter === 'correct' ? 'bg-emerald-600 text-white shadow-md' : 'bg-emerald-950/40 border border-emerald-900/50 hover:bg-emerald-900/40 text-emerald-300'
+              }`}
+            >
+              <Check className="w-3.5 h-3.5" /> ✓ Correct Answers ({resultSummary.totalScore})
+            </button>
+          </div>
+        </div>
+
+        {/* Detailed Question Review Cards */}
+        <div className="space-y-4">
+          {filteredMcqList.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                Part 1: Multiple Choice ({filteredMcqList.length} items shown)
               </h3>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                Isolate mistakes or review correct answers. Results remain saved in LocalStorage.
-              </p>
-            </div>
 
-            {/* Status Filter Tabs */}
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              <button
-                onClick={() => setReviewFilter('all')}
-                className={`btn ${reviewFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ fontSize: '0.76rem', padding: '6px 12px' }}
-              >
-                All ({resultSummary?.totalQuestions || 66})
-              </button>
-              <button
-                onClick={() => setReviewFilter('wrong')}
-                className={`btn ${reviewFilter === 'wrong' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{
-                  fontSize: '0.76rem',
-                  padding: '6px 12px',
-                  background: reviewFilter === 'wrong' ? 'var(--pup-crimson)' : 'rgba(225, 29, 72, 0.1)',
-                  borderColor: 'rgba(225, 29, 72, 0.4)',
-                  color: '#fff'
-                }}
-              >
-                <XCircle size={13} style={{ marginRight: '4px' }} />
-                Wrong ({totalWrongCount})
-              </button>
-              <button
-                onClick={() => setReviewFilter('correct')}
-                className={`btn ${reviewFilter === 'correct' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{
-                  fontSize: '0.76rem',
-                  padding: '6px 12px',
-                  background: reviewFilter === 'correct' ? 'var(--accent-emerald)' : 'rgba(16, 185, 129, 0.1)',
-                  borderColor: 'rgba(16, 185, 129, 0.4)',
-                  color: '#fff'
-                }}
-              >
-                <CheckCircle2 size={13} style={{ marginRight: '4px' }} />
-                Correct ({totalCorrectCount})
-              </button>
-              {totalFlaggedCount > 0 && (
-                <button
-                  onClick={() => setReviewFilter('flagged')}
-                  className={`btn ${reviewFilter === 'flagged' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '0.76rem', padding: '6px 12px' }}
-                >
-                  <Flag size={13} style={{ marginRight: '4px' }} />
-                  Flagged ({totalFlaggedCount})
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Section Filter Tabs */}
-          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
-            <button
-              onClick={() => setReviewPartFilter('all')}
-              style={{
-                background: reviewPartFilter === 'all' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)',
-                border: '1px solid var(--border-subtle)',
-                color: reviewPartFilter === 'all' ? '#fff' : 'var(--text-muted)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '4px 10px',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              All Sections
-            </button>
-            <button
-              onClick={() => setReviewPartFilter('mcq')}
-              style={{
-                background: reviewPartFilter === 'mcq' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255,255,255,0.04)',
-                border: '1px solid var(--border-subtle)',
-                color: reviewPartFilter === 'mcq' ? '#fff' : 'var(--text-muted)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '4px 10px',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Part 1: MCQ (1-{activeExam?.mcq?.length || 56})
-            </button>
-            <button
-              onClick={() => setReviewPartFilter('id')}
-              style={{
-                background: reviewPartFilter === 'id' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255,255,255,0.04)',
-                border: '1px solid var(--border-subtle)',
-                color: reviewPartFilter === 'id' ? '#fff' : 'var(--text-muted)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '4px 10px',
-                fontSize: '0.75rem',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Part 2: ID ({((activeExam?.mcq?.length || 56) + 1)}-{((activeExam?.mcq?.length || 56) + (activeExam?.identification?.length || 10))})
-            </button>
-          </div>
-        </div>
-
-        {/* Displaying Review Questions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {filteredReviewQuestions.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '36px 20px',
-              background: 'rgba(255,255,255,0.02)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--text-muted)'
-            }}>
-              <CheckCircle2 size={36} color="var(--accent-emerald)" style={{ marginBottom: '8px' }} />
-              <div style={{ fontWeight: 700, color: '#fff', fontSize: '1rem' }}>No items match this filter!</div>
-              <div style={{ fontSize: '0.82rem' }}>
-                {reviewFilter === 'wrong' ? 'Excellent! You answered all selected items correctly.' : 'Try selecting another filter above.'}
-              </div>
-            </div>
-          ) : (
-            filteredReviewQuestions.map((q) => {
-              const isCorrect = q.isCorrect;
-              return (
+              {filteredMcqList.map((q) => (
                 <div
                   key={q.id}
-                  style={{
-                    padding: '16px',
-                    borderRadius: 'var(--radius-md)',
-                    background: isCorrect ? 'rgba(16, 185, 129, 0.03)' : 'rgba(225, 29, 72, 0.05)',
-                    border: `1px solid ${isCorrect ? 'rgba(16, 185, 129, 0.25)' : 'rgba(225, 29, 72, 0.4)'}`
-                  }}
+                  className={`border rounded-2xl p-5 shadow-lg space-y-3 transition-all ${
+                    q.isCorrect ? 'bg-slate-900/90 border-slate-800' : 'bg-red-950/20 border-red-900/40'
+                  }`}
                 >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                    <div style={{ marginTop: '2px', flexShrink: 0 }}>
-                      {isCorrect ? (
-                        <CheckCircle2 size={18} color="var(--accent-emerald)" />
-                      ) : (
-                        <XCircle size={18} color="var(--pup-crimson)" />
-                      )}
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-xs font-mono font-bold text-slate-400">Question {q.number} of {totalQuestions}</span>
+                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 ${
+                      q.isCorrect ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                    }`}>
+                      {q.isCorrect ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                      {q.isCorrect ? 'Correct' : 'Incorrect'}
+                    </span>
+                  </div>
+
+                  <h4 className="text-sm md:text-base font-bold text-white leading-relaxed">{q.question}</h4>
+
+                  <div className="space-y-2 pt-2">
+                    {q.options.map((opt, optIdx) => {
+                      const isChosen = q.studentAns === optIdx;
+                      const isActualCorrect = q.correctAnswer === optIdx;
+
+                      let rowStyle = 'bg-slate-950/50 border-slate-800 text-slate-300';
+                      if (isActualCorrect) {
+                        rowStyle = 'bg-emerald-950/40 border-emerald-600/60 text-emerald-200 font-semibold';
+                      } else if (isChosen && !isActualCorrect) {
+                        rowStyle = 'bg-red-950/40 border-red-600/60 text-red-200 font-semibold';
+                      }
+
+                      return (
+                        <div key={optIdx} className={`p-3 rounded-xl border text-xs md:text-sm flex items-center justify-between gap-2 ${rowStyle}`}>
+                          <div className="flex items-center gap-2.5">
+                            <span className="font-mono font-bold text-xs opacity-75">{String.fromCharCode(65 + optIdx)}.</span>
+                            <span>{opt}</span>
+                          </div>
+                          {isActualCorrect && <span className="text-xs text-emerald-400 font-bold shrink-0">✓ Correct Answer</span>}
+                          {isChosen && !isActualCorrect && <span className="text-xs text-red-400 font-bold shrink-0">✕ Your Choice</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {q.explanation && (
+                    <div className="mt-3 bg-blue-950/30 border border-blue-900/50 rounded-xl p-3.5 text-xs text-blue-200 leading-relaxed">
+                      <strong className="text-blue-300 flex items-center gap-1.5 mb-1">
+                        <HelpCircle className="w-3.5 h-3.5" /> Explanation:
+                      </strong>
+                      {q.explanation}
                     </div>
-                    <div style={{ flex: 1, fontSize: '0.88rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                        <span style={{
-                          fontSize: '0.72rem',
-                          padding: '1px 6px',
-                          borderRadius: '4px',
-                          background: isCorrect ? 'rgba(16,185,129,0.2)' : 'rgba(225,29,72,0.2)',
-                          color: isCorrect ? '#a7f3d0' : '#fda4af',
-                          fontWeight: 700
-                        }}>
-                          {isCorrect ? 'CORRECT' : 'INCORRECT'}
-                        </span>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-                          {q.type === 'mcq' ? 'Part 1: MCQ' : 'Part 2: Identification'}
-                        </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {filteredIdList.length > 0 && (
+            <div className="space-y-3 pt-4">
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                Part 2: Identification ({filteredIdList.length} items shown)
+              </h3>
+
+              {filteredIdList.map((q) => (
+                <div
+                  key={q.id}
+                  className={`border rounded-2xl p-5 shadow-lg space-y-3 transition-all ${
+                    q.isCorrect ? 'bg-slate-900/90 border-slate-800' : 'bg-red-950/20 border-red-900/40'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-xs font-mono font-bold text-slate-400">Question {q.number} of {totalQuestions}</span>
+                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 ${
+                      q.isCorrect ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                    }`}>
+                      {q.isCorrect ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                      {q.isCorrect ? 'Correct' : 'Incorrect'}
+                    </span>
+                  </div>
+
+                  <h4 className="text-sm md:text-base font-bold text-white leading-relaxed">{q.question}</h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
+                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3">
+                      <div className="text-[10px] text-slate-400 font-semibold uppercase">Your Answer:</div>
+                      <div className={`font-mono text-sm mt-1 ${q.isCorrect ? 'text-emerald-300' : 'text-red-300'}`}>
+                        {q.studentAns || '<Blank / Unanswered>'}
                       </div>
-
-                      <div style={{ fontWeight: 600, color: '#f8fafc', marginBottom: '8px', lineHeight: 1.45 }}>
-                        Q{q.number}. {q.question}
-                      </div>
-
-                      {/* MCQ Comparison */}
-                      {q.type === 'mcq' && (
-                        <div style={{ marginBottom: '6px' }}>
-                          <div style={{ color: isCorrect ? '#a7f3d0' : '#fda4af', marginBottom: '3px' }}>
-                            <strong>Your Answer:</strong>{' '}
-                            {mcqAnswers[q.id] !== undefined
-                              ? `${String.fromCharCode(65 + mcqAnswers[q.id])}. ${q.options[mcqAnswers[q.id]]}`
-                              : 'Unanswered'}
-                          </div>
-                          {!isCorrect && (
-                            <div style={{ color: '#a7f3d0', marginBottom: '3px' }}>
-                              <strong>Correct Answer:</strong>{' '}
-                              {`${String.fromCharCode(65 + q.correctAnswer)}. ${q.options[q.correctAnswer]}`}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Identification Comparison */}
-                      {q.type === 'id' && (
-                        <div style={{ marginBottom: '6px' }}>
-                          <div style={{ color: isCorrect ? '#a7f3d0' : '#fda4af', marginBottom: '3px' }}>
-                            <strong>Your Answer:</strong> "{idAnswers[q.id] || 'Blank'}"
-                          </div>
-                          {!isCorrect && (
-                            <div style={{ color: '#a7f3d0', marginBottom: '3px' }}>
-                              <strong>Accepted Answer:</strong> {q.correctAnswerDisplay || q.correctAnswer}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Explanation */}
-                      <div style={{
-                        color: '#cbd5e1',
-                        fontSize: '0.8rem',
-                        marginTop: '6px',
-                        background: 'rgba(0,0,0,0.25)',
-                        padding: '8px 12px',
-                        borderRadius: 'var(--radius-sm)',
-                        borderLeft: `3px solid ${isCorrect ? 'var(--accent-emerald)' : 'var(--pup-crimson)'}`
-                      }}>
-                        {q.explanation}
+                    </div>
+                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3">
+                      <div className="text-[10px] text-slate-400 font-semibold uppercase">Accepted Answers:</div>
+                      <div className="font-mono text-sm mt-1 text-emerald-400 font-bold">
+                        {q.acceptableAnswers.join(' / ')}
                       </div>
                     </div>
                   </div>
+
+                  {q.explanation && (
+                    <div className="mt-3 bg-blue-950/30 border border-blue-900/50 rounded-xl p-3.5 text-xs text-blue-200 leading-relaxed">
+                      <strong className="text-blue-300 flex items-center gap-1.5 mb-1">
+                        <HelpCircle className="w-3.5 h-3.5" /> Explanation:
+                      </strong>
+                      {q.explanation}
+                    </div>
+                  )}
                 </div>
-              );
-            })
+              ))}
+            </div>
           )}
         </div>
       </div>
     );
   }
 
-  // ==========================================
-  // RENDER: ACTIVE EXAM (INSTANT PER-CLICK)
-  // ==========================================
+  // -------------------------------------------------------------
+  // ACTIVE EXAM VIEW
+  // -------------------------------------------------------------
+  const isMcqAnswered = mcqAnswers[currentMcqIndex] !== undefined;
+  const isIdAnswered = idEvaluated[currentIdIndex] !== undefined;
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
-      {/* Top Header Bar */}
-      <div className="glass-card" style={{ padding: '16px 20px' }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '12px'
-        }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span className="badge badge-crimson">
-                WebDev Midterm Exam
-              </span>
-              <span className="badge badge-gold">
-                66 Items (56 MCQ + 10 ID)
-              </span>
-            </div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>
-              Web Development (HTML5, CSS3 & PHP)
-            </h2>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Instant feedback active: Answers reveal immediate correctness and explanations upon selection.
-            </p>
-          </div>
-
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            flexWrap: 'wrap',
-            width: '100%',
-            justifyContent: 'space-between',
-            marginTop: '10px'
-          }}>
-            {/* Timer & Jump Button */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: secondsLeft < 600 ? 'rgba(225, 29, 72, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                padding: '6px 10px',
-                borderRadius: 'var(--radius-md)',
-                border: `1px solid ${secondsLeft < 600 ? 'rgba(225,29,72,0.5)' : 'var(--border-subtle)'}`,
-                color: secondsLeft < 600 ? '#fda4af' : '#fff'
-              }}>
-                <Clock size={14} color={secondsLeft < 600 ? 'var(--pup-crimson)' : 'var(--accent-cyan)'} />
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.84rem' }}>
-                  {formatTime(secondsLeft)}
-                </span>
-              </div>
-
-              <button
-                onClick={() => setShowJumpDrawer(!showJumpDrawer)}
-                className="btn btn-secondary"
-                style={{ padding: '6px 10px', fontSize: '0.78rem' }}
-                title="Jump directly to any question"
-              >
-                <span>Jump Qs</span>
-              </button>
-            </div>
-
-            {/* Submit button */}
-            <button
-              onClick={() => setShowConfirmSubmit(true)}
-              className="btn btn-primary"
-              style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-            >
-              Finish & Review ({totalAnswered}/{totalQuestions})
-            </button>
-          </div>
+    <div className="space-y-4 pb-12">
+      {/* Top Status Bar */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 md:p-4 shadow-xl flex flex-wrap items-center justify-between gap-3">
+        {/* Left: Course & Question Counter */}
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg">
+            {currentCourse.title}
+          </span>
+          <span className="text-xs font-mono font-bold text-white">
+            {examPart === 'mcq' ? `Q${currentMcqIndex + 1} of ${totalQuestions}` : `Q${totalMcqs + currentIdIndex + 1} of ${totalQuestions}`}
+          </span>
         </div>
 
-        {/* Section Switcher Tabs */}
-        <div style={{
-          display: 'flex',
-          borderBottom: '1px solid var(--border-subtle)',
-          overflowX: 'auto',
-          WebkitOverflowScrolling: 'touch',
-          gap: '4px',
-          marginTop: '14px',
-          paddingBottom: '2px'
-        }}>
-          {[
-            { id: 'mcq', labelDesktop: 'Part 1: MCQ (1-{activeExam?.mcq?.length || 56})', labelMobile: 'P1: MCQ', answered: answeredMcqCount, total: 50 },
-            { id: 'id', labelDesktop: `Part 2: Identification (${totalMcqs + 1}-${totalQuestions})`, labelMobile: 'P2: ID', answered: answeredIdCount, total: totalIds }
-          ].map((part) => {
-            const isActive = examPart === part.id;
-            return (
-              <button
-                key={part.id}
-                onClick={() => setExamPart(part.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: isActive ? 'rgba(225, 29, 72, 0.15)' : 'transparent',
-                  border: 'none',
-                  borderBottom: isActive ? '2px solid var(--pup-crimson)' : '2px solid transparent',
-                  color: isActive ? '#fff' : 'var(--text-muted)',
-                  padding: '9px 12px',
-                  cursor: 'pointer',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                  borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
-                  transition: 'all 0.2s ease',
-                  flexShrink: 0
-                }}
-              >
-                <span className="desktop-only-inline">{part.labelDesktop}</span>
-                <span className="mobile-only-inline">{part.labelMobile}</span>
-                <span style={{
-                  fontSize: '0.68rem',
-                  background: 'rgba(255,255,255,0.08)',
-                  padding: '2px 5px',
-                  borderRadius: '4px',
-                  color: part.answered === part.total ? 'var(--accent-emerald)' : 'var(--text-muted)'
-                }}>
-                  {part.answered}/{part.total}
-                </span>
-              </button>
-            );
-          })}
+        {/* Center: Part Switcher Tabs */}
+        <div className="flex items-center bg-slate-950 border border-slate-800 p-0.5 rounded-xl">
+          <button
+            onClick={() => setExamPart('mcq')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+              examPart === 'mcq' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Part 1: MCQ ({answeredMcqCount}/{totalMcqs})
+          </button>
+          <button
+            onClick={() => setExamPart('id')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+              examPart === 'id' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Part 2: ID ({answeredIdCount}/{totalIds})
+          </button>
         </div>
 
-        {/* Jump Drawer */}
-        {showJumpDrawer && (
-          <div style={{
-            background: 'rgba(10, 16, 28, 0.98)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-md)',
-            padding: '14px',
-            marginTop: '12px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#fff' }}>
-                Quick Question Navigator (Tap any number to jump)
-              </span>
-              <button
-                onClick={() => setShowJumpDrawer(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}
-              >
-                Close ✕
-              </button>
-            </div>
-
-            {/* MCQ 1-50 */}
-            <div style={{ marginBottom: '10px' }}>
-              <div style={{ fontSize: '0.72rem', color: 'var(--pup-gold)', fontWeight: 700, marginBottom: '5px' }}>
-                Part 1: MCQ (Questions 1 - {totalMcqs})
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                {activeExam.mcq.map((q) => {
-                  const isAns = mcqAnswers[q.id] !== undefined;
-                  const isFl = flagged[q.id];
-                  return (
-                    <button
-                      key={q.id}
-                      onClick={() => scrollToQuestion(q.number, 'mcq')}
-                      style={{
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '4px',
-                        background: isFl ? 'rgba(245, 158, 11, 0.3)' : isAns ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.05)',
-                        border: `1px solid ${isFl ? 'var(--pup-gold)' : isAns ? 'rgba(16, 185, 129, 0.5)' : 'var(--border-subtle)'}`,
-                        color: isFl ? '#fde68a' : isAns ? '#a7f3d0' : '#94a3b8',
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {q.number}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ID 51-60 */}
-            <div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', fontWeight: 700, marginBottom: '5px' }}>
-                Part 2: Identification (Questions {totalMcqs + 1} - {totalQuestions})
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                {activeExam.identification.map((q) => {
-                  const isAns = (idAnswers[q.id] || '').trim().length > 0;
-                  const isFl = flagged[q.id];
-                  return (
-                    <button
-                      key={q.id}
-                      onClick={() => scrollToQuestion(q.number, 'id')}
-                      style={{
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '4px',
-                        background: isFl ? 'rgba(245, 158, 11, 0.3)' : isAns ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.05)',
-                        border: `1px solid ${isFl ? 'var(--pup-gold)' : isAns ? 'rgba(56, 189, 248, 0.5)' : 'var(--border-subtle)'}`,
-                        color: isFl ? '#fde68a' : isAns ? '#bae6fd' : '#94a3b8',
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {q.number}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+        {/* Right: Timer & Finish Button */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-xl text-xs font-mono font-bold text-amber-300">
+            <Clock className="w-3.5 h-3.5 text-amber-400" />
+            <span>{formatTimer(secondsLeft)}</span>
           </div>
-        )}
+
+          <button
+            onClick={() => setShowJumpDrawer(!showJumpDrawer)}
+            className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors"
+            title="Question Navigator Grid"
+          >
+            <Grid className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => setConfirmSubmitModal(true)}
+            className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-md transition-all"
+          >
+            Finish ({totalAnswered}/{totalQuestions})
+          </button>
+        </div>
       </div>
 
-      {/* Part 1: MCQ with Instant Feedback */}
-      {examPart === 'mcq' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {activeExam.mcq.map((q) => {
-            const selectedIdx = mcqAnswers[q.id];
-            const isAnswered = selectedIdx !== undefined;
-            const isUserCorrect = isAnswered && selectedIdx === q.correctAnswer;
-
-            return (
-              <div
-                key={q.id}
-                id={`exam-q-${q.number}`}
-                className="glass-card"
-                style={{
-                  padding: '16px 14px',
-                  borderLeft: flagged[q.id] ? '3px solid var(--pup-gold)' : undefined
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px', gap: '10px' }}>
-                  <h4 style={{ fontSize: '0.94rem', fontWeight: 600, color: '#f8fafc', lineHeight: 1.5, wordBreak: 'break-word' }}>
-                    <span style={{ color: 'var(--pup-crimson)', fontWeight: 800, marginRight: '6px' }}>
-                      Q{q.number}.
-                    </span>
-                    {q.question}
-                  </h4>
-                  <button
-                    onClick={() => toggleFlag(q.id)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: flagged[q.id] ? 'var(--pup-gold)' : 'var(--text-dim)',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      flexShrink: 0
-                    }}
-                    title="Flag for review"
-                  >
-                    <Flag size={16} />
-                  </button>
-                </div>
-
-                {/* Shuffled Options A, B, C, D with Instant Highlight */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {q.options.map((opt, optIdx) => {
-                    const isSelected = selectedIdx === optIdx;
-                    const isTheCorrectOption = optIdx === q.correctAnswer;
-
-                    let btnBg = 'rgba(255, 255, 255, 0.03)';
-                    let btnBorder = 'var(--border-subtle)';
-                    let btnColor = '#cbd5e1';
-                    let letterBg = 'rgba(255, 255, 255, 0.08)';
-                    let letterColor = 'var(--text-muted)';
-                    let statusBadge = null;
-
-                    if (isAnswered) {
-                      if (isSelected) {
-                        if (isUserCorrect) {
-                          btnBg = 'rgba(16, 185, 129, 0.18)';
-                          btnBorder = 'rgba(16, 185, 129, 0.8)';
-                          btnColor = '#a7f3d0';
-                          letterBg = 'var(--accent-emerald)';
-                          letterColor = '#fff';
-                          statusBadge = (
-                            <span style={{
-                              fontSize: '0.7rem',
-                              fontWeight: 700,
-                              color: 'var(--accent-emerald)',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '3px',
-                              background: 'rgba(16, 185, 129, 0.15)',
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              marginLeft: 'auto'
-                            }}>
-                              <CheckCircle2 size={13} /> Correct
-                            </span>
-                          );
-                        } else {
-                          btnBg = 'rgba(225, 29, 72, 0.18)';
-                          btnBorder = 'rgba(225, 29, 72, 0.8)';
-                          btnColor = '#fda4af';
-                          letterBg = 'var(--pup-crimson)';
-                          letterColor = '#fff';
-                          statusBadge = (
-                            <span style={{
-                              fontSize: '0.7rem',
-                              fontWeight: 700,
-                              color: 'var(--pup-crimson)',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '3px',
-                              background: 'rgba(225, 29, 72, 0.15)',
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              marginLeft: 'auto'
-                            }}>
-                              <XCircle size={13} /> Your Choice
-                            </span>
-                          );
-                        }
-                      } else if (isTheCorrectOption && !isUserCorrect) {
-                        btnBg = 'rgba(16, 185, 129, 0.1)';
-                        btnBorder = 'rgba(16, 185, 129, 0.5)';
-                        btnColor = '#a7f3d0';
-                        letterBg = 'rgba(16, 185, 129, 0.4)';
-                        letterColor = '#fff';
-                        statusBadge = (
-                          <span style={{
-                            fontSize: '0.7rem',
-                            fontWeight: 700,
-                            color: 'var(--accent-emerald)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '3px',
-                            background: 'rgba(16, 185, 129, 0.15)',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            marginLeft: 'auto'
-                          }}>
-                            <CheckCircle2 size={13} /> Correct Answer
-                          </span>
-                        );
-                      }
-                    }
-
-                    return (
-                      <button
-                        key={optIdx}
-                        onClick={() => handleSelectMcq(q.id, optIdx)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          padding: '10px 14px',
-                          borderRadius: 'var(--radius-md)',
-                          background: btnBg,
-                          border: `1px solid ${btnBorder}`,
-                          color: btnColor,
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '0.84rem',
-                          transition: 'all 0.15s ease',
-                          wordBreak: 'break-word',
-                          lineHeight: 1.45
-                        }}
-                      >
-                        <div style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          background: letterBg,
-                          color: letterColor,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.74rem',
-                          fontWeight: 700,
-                          flexShrink: 0
-                        }}>
-                          {String.fromCharCode(65 + optIdx)}
-                        </div>
-                        <span style={{ flex: 1 }}>{opt}</span>
-                        {statusBadge}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Instant Feedback Card */}
-                {isAnswered && (
-                  <div style={{
-                    marginTop: '12px',
-                    padding: '12px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    background: isUserCorrect ? 'rgba(16, 185, 129, 0.08)' : 'rgba(225, 29, 72, 0.08)',
-                    border: `1px solid ${isUserCorrect ? 'rgba(16, 185, 129, 0.3)' : 'rgba(225, 29, 72, 0.3)'}`
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      {isUserCorrect ? (
-                        <>
-                          <CheckCircle2 size={16} color="var(--accent-emerald)" />
-                          <strong style={{ color: 'var(--accent-emerald)', fontSize: '0.84rem' }}>
-                            Correct! Great job.
-                          </strong>
-                        </>
-                      ) : (
-                        <>
-                          <XCircle size={16} color="var(--pup-crimson)" />
-                          <strong style={{ color: 'var(--pup-crimson)', fontSize: '0.84rem' }}>
-                            Incorrect — Correct answer: Option {String.fromCharCode(65 + q.correctAnswer)}: {q.options[q.correctAnswer]}
-                          </strong>
-                        </>
-                      )}
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: '#cbd5e1', lineHeight: 1.45 }}>
-                      {q.explanation}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Part 2: Identification with Check Answer */}
-      {examPart === 'id' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{
-            background: 'rgba(56, 189, 248, 0.06)',
-            padding: '12px 16px',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid rgba(56, 189, 248, 0.2)',
-            fontSize: '0.84rem',
-            color: '#cbd5e1'
-          }}>
-            Type your answer and tap <strong>Check Answer</strong> (or press Enter). Instant feedback will evaluate your answer against the course material.
+      {/* Question Navigator Drawer */}
+      {showJumpDrawer && (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-2xl space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+            <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <Grid className="w-4 h-4 text-amber-400" /> Question Navigator
+            </span>
+            <span className="text-xs text-slate-400 font-mono">{totalAnswered}/{totalQuestions} Answered</span>
           </div>
 
-          {activeExam.identification.map((q) => {
-            const evalState = idEvaluated[q.id];
-            const isChecked = evalState && evalState.checked;
-            const isUserMatch = isChecked && evalState.isMatch;
-
-            return (
-              <div key={q.id} id={`exam-q-${q.number}`} className="glass-card" style={{ padding: '16px 14px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <h4 style={{ fontSize: '0.98rem', fontWeight: 600, color: '#f8fafc', lineHeight: 1.5 }}>
-                    <span style={{ color: 'var(--accent-cyan)', fontWeight: 800, marginRight: '6px' }}>
-                      Q{q.number}.
-                    </span>
-                    {q.question}
-                  </h4>
+          <div className="space-y-2">
+            <div className="text-[11px] text-slate-400 font-bold uppercase">Part 1: MCQ (1-{totalMcqs})</div>
+            <div className="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-14 gap-1.5">
+              {activeExam.mcq.map((q, idx) => {
+                const ans = mcqAnswers[idx];
+                const isCur = examPart === 'mcq' && currentMcqIndex === idx;
+                let bg = 'bg-slate-800 text-slate-400';
+                if (ans !== undefined) {
+                  bg = ans === q.correctAnswer ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white';
+                }
+                return (
                   <button
-                    onClick={() => toggleFlag(q.id)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: flagged[q.id] ? 'var(--pup-gold)' : 'var(--text-dim)',
-                      cursor: 'pointer'
-                    }}
+                    key={q.id}
+                    onClick={() => { setExamPart('mcq'); setCurrentMcqIndex(idx); setShowJumpDrawer(false); }}
+                    className={`h-7 rounded-lg text-xs font-mono font-bold transition-all ${bg} ${
+                      isCur ? 'ring-2 ring-amber-400 scale-105' : ''
+                    }`}
                   >
-                    <Flag size={16} />
+                    {idx + 1}
                   </button>
-                </div>
+                );
+              })}
+            </div>
 
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <input
-                    type="text"
-                    value={idAnswers[q.id] || ''}
-                    onChange={(e) => handleInputId(q.id, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCheckIdAnswer(q);
-                    }}
-                    placeholder="Type your answer here..."
-                    style={{
-                      flex: 1,
-                      minWidth: '200px',
-                      background: '#090e1a',
-                      border: `1px solid ${
-                        isChecked
-                          ? isUserMatch
-                            ? 'rgba(16, 185, 129, 0.8)'
-                            : 'rgba(225, 29, 72, 0.8)'
-                          : 'var(--border-subtle)'
-                      }`,
-                      borderRadius: 'var(--radius-md)',
-                      padding: '10px 14px',
-                      color: '#fff',
-                      fontFamily: 'var(--font-sans)',
-                      fontSize: '15px',
-                      outline: 'none'
-                    }}
-                  />
+            <div className="text-[11px] text-slate-400 font-bold uppercase pt-2">Part 2: Identification ({totalMcqs + 1}-{totalQuestions})</div>
+            <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+              {activeExam.identification.map((q, idx) => {
+                const isEval = idEvaluated[idx];
+                const isCur = examPart === 'id' && currentIdIndex === idx;
+                let bg = 'bg-slate-800 text-slate-400';
+                if (isEval) {
+                  bg = isEval.isCorrect ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white';
+                }
+                return (
                   <button
-                    onClick={() => handleCheckIdAnswer(q)}
-                    className="btn btn-primary"
-                    style={{ fontSize: '0.8rem', padding: '10px 14px', whiteSpace: 'nowrap' }}
+                    key={q.id}
+                    onClick={() => { setExamPart('id'); setCurrentIdIndex(idx); setShowJumpDrawer(false); }}
+                    className={`h-7 rounded-lg text-xs font-mono font-bold transition-all ${bg} ${
+                      isCur ? 'ring-2 ring-amber-400 scale-105' : ''
+                    }`}
                   >
-                    <Send size={14} style={{ marginRight: '4px' }} /> Check Answer
+                    {totalMcqs + idx + 1}
                   </button>
-                </div>
-
-                {/* Instant Feedback Card for Identification */}
-                {isChecked && (
-                  <div style={{
-                    marginTop: '12px',
-                    padding: '12px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    background: isUserMatch ? 'rgba(16, 185, 129, 0.08)' : 'rgba(225, 29, 72, 0.08)',
-                    border: `1px solid ${isUserMatch ? 'rgba(16, 185, 129, 0.3)' : 'rgba(225, 29, 72, 0.3)'}`
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      {isUserMatch ? (
-                        <>
-                          <CheckCircle2 size={16} color="var(--accent-emerald)" />
-                          <strong style={{ color: 'var(--accent-emerald)', fontSize: '0.84rem' }}>
-                            Correct! Exact match.
-                          </strong>
-                        </>
-                      ) : (
-                        <>
-                          <XCircle size={16} color="var(--pup-crimson)" />
-                          <strong style={{ color: 'var(--pup-crimson)', fontSize: '0.84rem' }}>
-                            Incorrect — Accepted Answer: {q.correctAnswerDisplay || q.correctAnswer}
-                          </strong>
-                        </>
-                      )}
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: '#cbd5e1', lineHeight: 1.45 }}>
-                      {q.explanation}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Confirmation Modal */}
-      {showConfirmSubmit && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 200,
-          padding: '16px'
-        }}>
-          <div className="glass-card animate-fade-in" style={{ maxWidth: '440px', width: '100%', padding: '28px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-              <AlertTriangle size={28} color="var(--pup-gold)" />
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff' }}>
-                Confirm Exam Submission
-              </h3>
+      {/* Question Card */}
+      {examPart === 'mcq' ? (
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-7 shadow-xl space-y-5">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span className="font-mono font-bold">Question {currentMcqIndex + 1} of {totalQuestions}</span>
+            <button
+              onClick={() => handleToggleFlag('mcq', currentMcqIndex)}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors ${
+                flagged[`mcq_${currentMcqIndex}`] ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-400'
+              }`}
+            >
+              <Flag className="w-3.5 h-3.5" />
+              <span>{flagged[`mcq_${currentMcqIndex}`] ? 'Flagged' : 'Flag'}</span>
+            </button>
+          </div>
+
+          <h3 className="text-base md:text-xl font-bold text-white leading-relaxed">
+            {currentMcq.question}
+          </h3>
+
+          {/* MCQ Options with Instant Feedback */}
+          <div className="space-y-2.5 pt-2">
+            {currentMcq.options.map((option, optIdx) => {
+              const isSelected = mcqAnswers[currentMcqIndex] === optIdx;
+              const isCorrectOption = currentMcq.correctAnswer === optIdx;
+
+              let style = 'bg-slate-950/60 border-slate-800 hover:bg-slate-850 hover:border-slate-700 text-slate-200';
+              if (isMcqAnswered) {
+                if (isCorrectOption) {
+                  style = 'bg-emerald-950/50 border-emerald-500 text-emerald-100 font-semibold ring-1 ring-emerald-500';
+                } else if (isSelected && !isCorrectOption) {
+                  style = 'bg-red-950/50 border-red-500 text-red-100 font-semibold ring-1 ring-red-500';
+                } else {
+                  style = 'bg-slate-950/30 border-slate-800/60 text-slate-500 opacity-60';
+                }
+              }
+
+              return (
+                <button
+                  key={optIdx}
+                  onClick={() => handleSelectMcqOption(optIdx)}
+                  disabled={isMcqAnswered}
+                  className={`w-full text-left p-3.5 md:p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 text-xs md:text-sm ${style}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={`w-6 h-6 rounded-lg font-mono text-xs font-bold flex items-center justify-center shrink-0 border ${
+                      isMcqAnswered && isCorrectOption
+                        ? 'bg-emerald-500 text-slate-950 border-emerald-400'
+                        : isMcqAnswered && isSelected && !isCorrectOption
+                        ? 'bg-red-500 text-white border-red-400'
+                        : 'border-slate-700 text-slate-400'
+                    }`}>
+                      {String.fromCharCode(65 + optIdx)}
+                    </span>
+                    <span className="flex-1">{option}</span>
+                  </div>
+
+                  {isMcqAnswered && isCorrectOption && (
+                    <span className="text-xs text-emerald-400 font-bold flex items-center gap-1 shrink-0">
+                      <Check className="w-4 h-4" /> Correct
+                    </span>
+                  )}
+                  {isMcqAnswered && isSelected && !isCorrectOption && (
+                    <span className="text-xs text-red-400 font-bold flex items-center gap-1 shrink-0">
+                      <X className="w-4 h-4" /> Wrong
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Instant Feedback Explanation Box */}
+          {isMcqAnswered && (
+            <div className="mt-4 bg-blue-950/30 border border-blue-900/50 rounded-2xl p-4 text-xs md:text-sm text-blue-200 leading-relaxed animate-fadeIn">
+              <div className="font-bold text-blue-300 flex items-center gap-2 mb-1.5">
+                <HelpCircle className="w-4 h-4 text-blue-400" />
+                Lesson Explanation & Key Rationale:
+              </div>
+              <p>{currentMcq.explanation}</p>
             </div>
-            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
-              You have answered <strong>{totalAnswered} of {totalQuestions} questions</strong>.
-              {totalAnswered < 60 && (
-                <span style={{ display: 'block', marginTop: '6px', color: '#fda4af' }}>
+          )}
+
+          {/* Navigation Controls */}
+          <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
+            <button
+              onClick={() => setCurrentMcqIndex((prev) => Math.max(0, prev - 1))}
+              disabled={currentMcqIndex === 0}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" /> Previous
+            </button>
+
+            {currentMcqIndex < totalMcqs - 1 ? (
+              <button
+                onClick={() => setCurrentMcqIndex((prev) => prev + 1)}
+                className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition-all"
+              >
+                Next <ChevronRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={() => setExamPart('id')}
+                className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all"
+              >
+                Proceed to Part 2: Identification <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Identification Part */
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 md:p-7 shadow-xl space-y-5">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span className="font-mono font-bold">Question {totalMcqs + currentIdIndex + 1} of {totalQuestions} (Identification)</span>
+            <button
+              onClick={() => handleToggleFlag('id', currentIdIndex)}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-colors ${
+                flagged[`id_${currentIdIndex}`] ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-400'
+              }`}
+            >
+              <Flag className="w-3.5 h-3.5" />
+              <span>{flagged[`id_${currentIdIndex}`] ? 'Flagged' : 'Flag'}</span>
+            </button>
+          </div>
+
+          <h3 className="text-base md:text-xl font-bold text-white leading-relaxed">
+            {currentId.question}
+          </h3>
+
+          {/* Identification Input Form */}
+          <div className="space-y-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                placeholder="Type your answer here..."
+                value={idAnswers[currentIdIndex] || ''}
+                disabled={isIdAnswered}
+                onChange={(e) => setIdAnswers((prev) => ({ ...prev, [currentIdIndex]: e.target.value }))}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSubmitIdAnswer(currentIdIndex); }}
+                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 disabled:opacity-75 font-mono"
+              />
+              {!isIdAnswered && (
+                <button
+                  onClick={() => handleSubmitIdAnswer(currentIdIndex)}
+                  className="px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-md transition-all shrink-0"
+                >
+                  <Send className="w-4 h-4" /> Submit Answer
+                </button>
+              )}
+            </div>
+
+            {/* Identification Instant Feedback */}
+            {isIdAnswered && (
+              <div className={`p-4 rounded-2xl border text-xs md:text-sm animate-fadeIn space-y-2 ${
+                idEvaluated[currentIdIndex]?.isCorrect
+                  ? 'bg-emerald-950/40 border-emerald-600/60 text-emerald-200'
+                  : 'bg-red-950/40 border-red-600/60 text-red-200'
+              }`}>
+                <div className="flex items-center gap-2 font-bold text-base">
+                  {idEvaluated[currentIdIndex]?.isCorrect ? (
+                    <>
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                      <span>Correct Answer!</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-5 h-5 text-red-400" />
+                      <span>Incorrect!</span>
+                    </>
+                  )}
+                </div>
+
+                <div className="text-xs text-slate-300">
+                  <span className="font-semibold text-slate-400">Accepted Answer(s): </span>
+                  <span className="font-mono text-emerald-300 font-bold">{currentId.acceptableAnswers.join(' / ')}</span>
+                </div>
+
+                {currentId.explanation && (
+                  <p className="text-xs text-slate-300 pt-1 border-t border-slate-800/80 leading-relaxed">
+                    {currentId.explanation}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Navigation Controls */}
+          <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
+            <button
+              onClick={() => setCurrentIdIndex((prev) => Math.max(0, prev - 1))}
+              disabled={currentIdIndex === 0}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" /> Previous
+            </button>
+
+            {currentIdIndex < totalIds - 1 ? (
+              <button
+                onClick={() => setCurrentIdIndex((prev) => prev + 1)}
+                className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all"
+              >
+                Next <ChevronRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={() => setConfirmSubmitModal(true)}
+                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all"
+              >
+                Review & Finish Exam <Check className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Submission Modal */}
+      {confirmSubmitModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center gap-2 text-amber-400 font-bold text-base">
+              <AlertTriangle className="w-5 h-5" /> Confirm Examination Submission
+            </div>
+
+            <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
+              You have answered <strong className="text-white">{totalAnswered} of {totalQuestions} questions</strong>.
+              {totalAnswered < totalQuestions && (
+                <span className="block mt-2 text-red-300 font-semibold">
                   Warning: You have {totalQuestions - totalAnswered} unanswered questions remaining.
                 </span>
               )}
             </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
               <button
-                onClick={() => setShowConfirmSubmit(false)}
-                className="btn btn-secondary"
+                onClick={() => setConfirmSubmitModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
               >
-                Back to Questions
+                Cancel & Review
               </button>
               <button
                 onClick={handleSubmitExam}
-                className="btn btn-primary"
+                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-black shadow-lg transition-colors"
               >
-                Submit Now
+                Submit Final Exam
               </button>
             </div>
           </div>
